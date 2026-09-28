@@ -1,0 +1,54 @@
+name: gitlab_super_mcp
+version: 1.2.0
+description: "Ультимативный ИИ-ассистент: аудит SOLID, исправление падений CI/CD и интерактивное управление GitLab MR"
+runtime: python3
+
+env:
+  GITLAB_URL: "\${env.GITLAB_URL}"
+  GITLAB_TOKEN: "\${env.GITLAB_TOKEN}"
+  GITLAB_PROJECT_ID: "\${env.GITLAB_PROJECT_ID}"
+
+system_prompt:
+  file: "./system_prompt.md"
+
+tools:
+  - name: get_mr_diff
+    description: "Получить diff изменений MR и SHA-хеши для точечного ревью."
+    command: "python3 gitlab_mcp_skill.py diff"
+
+  - name: post_inline_comment
+    description: "Оставить точечный комментарий в коде GitLab на конкретную строку файла."
+    command: "python3 gitlab_mcp_skill.py inline --path {path} --line {line} --text {text}"
+    arguments:
+      - name: path
+        type: string
+        description: "Относительный путь к файлу"
+        required: true
+      - name: line
+        type: integer
+        description: "Номер целевой строки для замечания"
+        required: true
+      - name: text
+        type: string
+        description: "Текст рецензии с примером правильного рефакторинга"
+        required: true
+
+  - name: get_pipeline_logs
+    description: "Проверить статус CI/CD пайплайна и выгрузить логи ошибок в случае падения сборки."
+    command: "python3 gitlab_mcp_skill.py pipeline"
+
+  - name: read_mr_discussions
+    description: "Прочитать все открытые ветки обсуждений в MR."
+    command: "python3 gitlab_mcp_skill.py read"
+
+  - name: resolve_discussion
+    description: "Переключить статус обсуждения в GitLab (закрыть/открыть тред)."
+    command: "python3 gitlab_mcp_skill.py resolve --discussion {discussion_id} --status {status}"
+    arguments:
+      - name: discussion_id
+        type: string
+        required: true
+      - name: status
+        type: string
+        description: "'true' для закрытия замечания, 'false' для открытия"
+        required: true
